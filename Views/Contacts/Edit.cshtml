@@ -1,8 +1,18 @@
 ﻿@model ContactPro.Models.Contact
+@using ContactPro.Services.Interfaces;
+
+
+
+
+@inject IImageService _ImageService
+
 
 @{
     ViewData["Title"] = "Edit";
 }
+
+
+
 
 <h1>Edit</h1>
 
@@ -10,14 +20,28 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Edit">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
-            <div class="form-group">
+            <input type="hidden" asp-for="AppUserId" />
+            <input type="hidden" asp-for="Created" />
+            <input type="hidden" asp-for="ImageDate" />
+            <input type="hidden" asp-for="ImageType" />
+         @*   <div class="form-group">
                 <label asp-for="AppUserId" class="control-label"></label>
                 <select asp-for="AppUserId" class="form-control" asp-items="ViewBag.AppUserId"></select>
                 <span asp-validation-for="AppUserId" class="text-danger"></span>
+            </div>*@
+
+            <div class="square-img-container">
+                <img id="contactImage" class="square-img" src=@_ImageService.ConvertByteArrayToFile(Model.ImageDate!, Model.ImageType!) />
             </div>
+            <div>
+                <input asp-for="ImageFile" class="form-control" accept=".png,.jpg,.jpeg,.gif" onchange="document.getElementById('contactImage').src= window.URL.createObjectURL(this.files[0])" />
+                <span asp-validation-for="ImageFile" class="text-danger"></span>
+            </div>
+
+
             <div class="form-group">
                 <label asp-for="FirstName" class="control-label"></label>
                 <input asp-for="FirstName" class="form-control" />
@@ -50,13 +74,17 @@
             </div>
             <div class="form-group">
                 <label asp-for="State" class="control-label"></label>
-                <select asp-for="State" class="form-control"></select>
+                <select asp-for="State" class="form-control" asp-items="ViewBag.StatesList"></select>
                 <span asp-validation-for="State" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="ZipCode" class="control-label"></label>
                 <input asp-for="ZipCode" class="form-control" />
                 <span asp-validation-for="ZipCode" class="text-danger"></span>
+            </div>
+            <div class="col-12 col-lg-6 mt-3">
+                <label asp-for="Categories" class="control-label"></label>
+                <select class="form-control" asp-items="@ViewBag.CategoryList" name="Selected" multiple></select>
             </div>
             <div class="form-group">
                 <label asp-for="Email" class="control-label"></label>
@@ -68,21 +96,23 @@
                 <input asp-for="PhoneNumber" class="form-control" />
                 <span asp-validation-for="PhoneNumber" class="text-danger"></span>
             </div>
-            <div class="form-group">
+@*            <div class="form-group">
                 <label asp-for="Created" class="control-label"></label>
                 <input asp-for="Created" class="form-control" />
                 <span asp-validation-for="Created" class="text-danger"></span>
-            </div>
-            <div class="form-group">
+            </div>*@
+@*            <div class="form-group">
                 <label asp-for="ImageDate" class="control-label"></label>
                 <input asp-for="ImageDate" class="form-control" />
                 <span asp-validation-for="ImageDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
+            </div>*@
+@*            <div class="form-group">
                 <label asp-for="ImageType" class="control-label"></label>
                 <input asp-for="ImageType" class="form-control" />
                 <span asp-validation-for="ImageType" class="text-danger"></span>
-            </div>
+            </div>*@
+
+
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
