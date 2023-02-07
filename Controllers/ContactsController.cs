@@ -11,8 +11,8 @@ using ContactPro.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using ContactPro.Services.Interfaces;
-
-
+using ContactPro.Models.ViewModels;
+using Microsoft.AspNetCore.Identity.UI.Services;
 namespace ContactPro.Controllers
 {
     [Authorize]
@@ -23,28 +23,178 @@ namespace ContactPro.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IImageService _imageService;
         private readonly IContactProService _contactProService;
+        private readonly IEmailSender _emailService;
 
 
-        public ContactsController(ApplicationDbContext context, UserManager<AppUser> userManager, IImageService imageService, IContactProService contactProService)
+        public ContactsController(ApplicationDbContext context, UserManager<AppUser> userManager, IImageService imageService, IContactProService contactProService, IEmailSender emailService)
         {
             _context = context;
             _userManager = userManager;
             _imageService = imageService;   
-            _contactProService = contactProService; 
+            _contactProService = contactProService;
+            _emailService = emailService;
         }
 
         // GET: Contacts
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? categoryId, string? swalMessage = null)
+
+
         {
-            string userId = _userManager.GetUserId(User)!;
+
+
+            ViewData["SwalMessage"] = swalMessage;
+
+            string? userId = _userManager.GetUserId(User)!;
 
             List<Contact> contacts = new List<Contact>();
 
-            contacts = await _context.Contacts.Where(c => c.AppUserId == userId).Include(c => c.Categories).ToListAsync();
+            List<Category> categories = await _context.Categories.Where(c => c.AppUserId == userId).ToListAsync();
+
+
+            if(categoryId == null)
+            {
+
+                contacts = await _context.Contacts.Where(c => c.AppUserId == userId).Include(c => c.Categories).ToListAsync();
+
+
+            } else
+            {
+                contacts = (await _context.Categories.Include(c => c.Contacts).FirstOrDefaultAsync(c => c.AppUserId == userId && c.Id == categoryId))!.Contacts.ToList();
+            }
+
+          IEnumerable<Contact>  model = await _context.Contacts.Where(c => c.AppUserId == userId).Include(c => c.Categories).ToListAsync();
+
+            ViewData["CategoryId"] = new SelectList(categories, "Id", "Name", categoryId);
+
 
             return View(contacts);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+
+        public async Task<IActionResult> SearchContacts(string? searchString)
+        {
+            string? userId = _userManager.GetUserId(User);
+            List<Contact> contacts = new List<Contact>();
+
+            AppUser? appUser = await _context.Users
+                .Include(u => u.Contacts)
+                .ThenInclude(c => c.Categories)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (string.IsNullOrEmpty(searchString))
+            {
+                contacts = appUser!.Contacts
+                    .OrderBy(c => c.LastName)
+                    .ThenBy(c => c.FirstName)
+                    .ToList();
+            } else
+            {
+                contacts = appUser!.Contacts
+                    .Where(c => c.FullName!
+                    .ToLower().Contains(searchString
+                    .ToLower())).OrderBy(c => c.LastName)
+                    .ThenBy(c => c.FirstName)
+                    .ToList();
+            }
+
+
+            ViewData["CategoryId"] = new SelectList(appUser.Categories, "Id", "Name");
+
+            return View(nameof(Index), contacts);
+
+        }
+
+        public async Task<IActionResult> EmailContact(int? id)
+        {
+            if(id == null)
+            {
+                return NotFound();
+            }
+
+
+
+            
+
+
+            string? userId = _userManager.GetUserId(User);
+
+           Contact? contact = await _context.Contacts
+                .FirstOrDefaultAsync(c => c.Id == id && c.AppUserId == userId);
+
+
+            if(contact == null)
+            {
+
+                return NotFound();
+            }
+
+
+            EmailData emailData = new EmailData()
+            {
+
+                EmailAddress = contact!.Email,
+                FirstName = contact.FirstName,
+                LastName = contact.LastName
+            };
+
+
+            EmailContactViewModel viewModel = new EmailContactViewModel()
+            {
+                Contact = contact,
+                EmailData = emailData
+            };
+
+            return View(viewModel);
+        }
+
+
+        // Instaniate EmailDat
+            //Intaniate the ViewModel
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EmailContact(EmailContactViewModel viewModel)
+        {
+
+            if(ModelState.IsValid)
+            {
+
+
+                string? swalMessage = string.Empty;
+
+                try
+                {
+                    await _emailService.SendEmailAsync(viewModel.EmailData!.EmailAddress!,
+                                                        viewModel.EmailData.EmailSubject!,
+                                                        viewModel.EmailData.EmailBody!);
+
+
+                    swalMessage = "Success: Email Sent!";
+
+
+                    return RedirectToAction(nameof(Index), new { swalMessage });
+                }
+                catch (Exception)
+                {
+
+;
+                    swalMessage = "Error: Email Send Failed";
+                    return RedirectToAction(nameof(Index), new { swalMessage });
+                    throw;
+                }
+            }
+
+            return View(viewModel);
+
+
+        }
+
+
+
 
         // GET: Contacts/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -78,9 +228,11 @@ namespace ContactPro.Controllers
 
             string? userId = _userManager.GetUserId(User);
 
-            IEnumerable<Category> categoriesList = await _context.Categories.Where(c => c.AppUserId == userId).ToListAsync();
+            IEnumerable<Category> categoriesList = await _context.Categories
+                .Where(c => c.AppUserId == userId)
+                .ToListAsync();
 
-            ViewData["CategoryList"] = new MultiSelectList(categoriesList, "Name", "Id");
+            ViewData["CategoryList"] = new MultiSelectList(categoriesList, "Id", "Name");
 
 
 
@@ -143,14 +295,18 @@ namespace ContactPro.Controllers
                 return NotFound();
             }
 
-            var contact = await _context.Contacts.Include(c => c.Categories).FirstOrDefaultAsync(c => c.Id == id);
+            var contact = await _context.Contacts
+                .Include(c => c.Categories)
+                .FirstOrDefaultAsync(c => c.Id == id);
     
 
 
 
             string? userId = _userManager.GetUserId(User);
 
-            IEnumerable<Category> categoriesList = await _context.Categories.Where(c => c.AppUserId == userId).ToListAsync();
+            IEnumerable<Category> categoriesList = await _context.Categories
+                .Where(c => c.AppUserId == userId)
+                .ToListAsync();
 
 
             IEnumerable<int> currentCategories =  contact!.Categories.Select(c => c.Id);

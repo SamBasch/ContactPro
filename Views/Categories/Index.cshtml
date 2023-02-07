@@ -31,6 +31,11 @@
                 @Html.DisplayFor(modelItem => item.AppUser.Id)
             </td>*@
             <td>
+                    @if(item.Contacts.Count != 0)
+                    {
+                        <a asp-action="EmailCategory" asp-route-id="@item.Id">Email</a><span>|</span>
+                    }
+                
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
                 <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
@@ -39,3 +44,32 @@
 }
     </tbody>
 </table>
+
+@section scripts {
+
+    <script>
+        let message = '@(ViewBag.SwalMessage)';
+
+        if (!message.includes("Error") && message != '') {
+
+            Swal.fire({
+                backdrop: false,
+                icon: 'success',
+                title: message,
+                showConfirmButton: true
+            });
+
+        } else if (message.includes('Error')) {
+
+            Swal.fire({
+                backdrop: false,
+                icon: 'error',
+                title: 'Oops !',
+                text: message
+            });
+
+
+        }
+    </script>
+}
+
