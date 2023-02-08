@@ -337,17 +337,7 @@ namespace ContactPro.Controllers
             }
 
             if (ModelState.IsValid)
-
-
-
-
             {
-
-
-
-
-
-
                 try
                 {
                     //Reformat created date
@@ -370,13 +360,16 @@ namespace ContactPro.Controllers
                         contact.ImageType = contact.ImageFile.ContentType;
                     }
 
+                    _context.Update(contact);
+                    await _context.SaveChangesAsync();
+
 
 
 
                     //TODO: 
                     //Add use of the ContactProService ???? 
 
-                    if(selected != null)
+                    if (selected != null)
                     {
 
                         //1. Remove Contact's Categories
@@ -384,9 +377,12 @@ namespace ContactPro.Controllers
                         //2. Add selected categories to the contacts
                         await _contactProService.AddContactToCategoriesAsync(selected, contact.Id);
 
+                
+
                     }
-                    
-                   
+
+                    _context.Update(contact);
+                    await _context.SaveChangesAsync();
 
 
 

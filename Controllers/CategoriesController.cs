@@ -239,7 +239,7 @@ namespace ContactPro.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id", category.AppUserId);
+            //ViewData["AppUserId"] = new SelectList(_context.Users, "Id", "Id", category.AppUserId);
             return View(category);
         }
 
@@ -252,7 +252,8 @@ namespace ContactPro.Controllers
             }
 
             var category = await _context.Categories
-                .Include(c => c.AppUser)
+                .Include(c => c.Contacts)
+                .ThenInclude(c => c.AppUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (category == null)
             {
