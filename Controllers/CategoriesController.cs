@@ -51,7 +51,7 @@ namespace ContactPro.Controllers
 
             
 
-            IEnumerable<Category> categories = await _context.Categories.Where(c => c.AppUserId == userId).Include(c => c.Contacts).ToListAsync();
+            IEnumerable<Category> categories = await _context.Categories.Where(c => c.AppUserId == userId).Include(c => c.Contacts).ThenInclude(c => c.AppUser).ToListAsync();
 
             return View(categories);
         }

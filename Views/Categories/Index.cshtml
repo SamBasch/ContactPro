@@ -1,4 +1,6 @@
-﻿@model IEnumerable<ContactPro.Models.Category>
+﻿@using ContactPro.Services.Interfaces;
+@model IEnumerable<ContactPro.Models.Category>
+@inject IImageService _ImageService
 
 @{
     ViewData["Title"] = "Index";
@@ -9,41 +11,46 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-@*            <th>
-                @Html.DisplayNameFor(model => model.AppUser)
-            </th>*@
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-@*            <td>
-                @Html.DisplayFor(modelItem => item.AppUser.Id)
-            </td>*@
-            <td>
-                    @if(item.Contacts.Count != 0)
-                    {
-                        <a asp-action="EmailCategory" asp-route-id="@item.Id">Email</a><span> | </span>
-                    }
-                
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+
+@foreach (var item in Model)
+{
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-title">
+                <h3>@item.Name</h3>
+            </div>
+            <div class="text-muted fs-6">
+                There @(item.Contacts.Count == 1 ? "is 1 contact" : $"are {item.Contacts.Count} contacts")
+                in this category
+            </div>
+            <div class="d-flex">
+                @foreach (Contact contact in item.Contacts)
+                {
+                    <div class="square-img-container m-2" style="height: 60px; width: 60px;"
+                 data-bs-toggle="tooltip" data-bs-title="@contact.FullName" data-bs-placement="bottom">
+                        <img class="square-img" src="@_ImageService.ConvertByteArrayToFile(contact.ImageDate!, contact.ImageType!)">
+                    </div>
+                }
+            </div>
+            <div class="d-flex justify-content-end">
+
+                <a class="mx-3 btn btn-outline-info" asp-action="Edit" asp-route-id="@item.Id">
+                    <i class="fs-3 bi bi-pencil-square"></i>
+                </a>
+
+                <a class="mx-3 btn btn-outline-secondary" asp-action="Details" asp-route-id="@item.Id">
+                    <i class="fs-3 bi bi-newspaper"></i>
+                </a>
+
+                <a class="mx-3 btn btn-outline-danger" asp-action="Delete" asp-route-id="@item.Id">
+                    <i class="fs-3 bi bi-trash"></i>
+                </a>
+
+            </div>
+        </div>
+    </div>
 }
-    </tbody>
-</table>
+
 
 @section scripts {
 
