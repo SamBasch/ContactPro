@@ -43,7 +43,7 @@ namespace ContactPro.Controllers
         {
 
 
-            ViewData["SwalMessage"] = swalMessage;
+            ViewData["swalMessage"] = swalMessage;
 
             string? userId = _userManager.GetUserId(User)!;
 
